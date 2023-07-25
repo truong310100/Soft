@@ -13,7 +13,7 @@ class App(Frame):
         # Tạo một menu dropdown
         self.var = StringVar(self)
         self.var.set("Khối")
-        self.dropdown = OptionMenu(self, self.var, "HHO", "HHA", "HA1", "HHE", "HHD", "HHF", "HCM", "VHU", "Vạn Tường", "OSV")
+        self.dropdown = OptionMenu(self, self.var, "HHO", "HHA", "HA1", "HHE", "HEH", "HHD", "HHF", "HCM", "VHU", "Vạn Tường", "OSV")
         self.dropdown.grid(row=0, column=1)
 
         self.label1 = Label(self, text="Họ và tên:")
@@ -93,6 +93,8 @@ class App(Frame):
             word = DocxTemplate(r'Form\HA1.docx')
         elif self.var.get() == "HHE":
             word = DocxTemplate(r'Form\HHE.docx')
+        elif self.var.get() == "HEH":
+            word = DocxTemplate(r'Form\HEH.docx')
         elif self.var.get() == "HHD":
             word = DocxTemplate(r'Form\HHD.docx')
         elif self.var.get() == "HHF":

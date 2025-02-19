@@ -35,11 +35,13 @@ class App(Frame):
         self.label2.grid(row=2, column=0)
         self.entry2 = Entry(self, width=30)
         self.entry2.grid(row=2, column=1)
+        self.entry2.bind("<KeyRelease>", self.format_upper)
 
         self.label3 = Label(self, text="Phòng Ban:")
         self.label3.grid(row=3, column=0)
         self.entry3 = Entry(self, width=30)
         self.entry3.grid(row=3, column=1)
+        self.entry3.bind("<KeyRelease>", self.format_upper)
 
         self.label4 = Label(self, text="Mail:")
         self.label4.grid(row=4, column=0)
@@ -79,6 +81,12 @@ class App(Frame):
         s = s.title()
         self.entry1.delete(0, END)
         self.entry1.insert(0, s)
+
+    def format_upper(self, event):
+        s = event.widget.get()
+        s = s.upper()
+        event.widget.delete(0, END)
+        event.widget.insert(0, s)
 
     def format_mail(self, event):
         s = self.entry4.get()

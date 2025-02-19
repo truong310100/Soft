@@ -79,10 +79,10 @@ def check_driver():
         web_check_screen,
         web_check_speaker,
         web_check_keyboard,
-        web_check_camera,
+        # web_check_camera,
         web_check_micro
     ]
-    
+    os.system('start microsoft.windows.camera:')
     for url in urls:
         webbrowser.open(url)
         time.sleep(1)

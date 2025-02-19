@@ -1,0 +1,15 @@
+Remove-Item Run.exe
+Remove-Item battery-report.html
+rmdir -Recurse -Force Export
+pyinstaller --onefile --noconsole --icon=BackupApp/icon.ico --clean --name=Run --distpath . BackupApp/CheckingDevice_v14.02.2025.py
+rmdir -Recurse -Force build
+Remove-Item Run.spec
+
+start .
+start \\172.17.35.30\it-softwares\TruongNL\Soft\Apps\CheckingDevice
+start c:\Soft\Apps\CheckingDevice
+
+robocopy . "\\172.17.35.30\it-softwares\TruongNL\Soft\Apps\CheckingDevice" /E
+robocopy . "C:\Soft\Apps\CheckingDevice" /E
+
+start run.exe

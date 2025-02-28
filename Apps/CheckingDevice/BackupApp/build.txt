@@ -1,7 +1,7 @@
 Remove-Item Run.exe
 Remove-Item battery-report.html
 rmdir -Recurse -Force Export
-pyinstaller --onefile --noconsole --icon=BackupApp/icon.ico --clean --name=Run --distpath . BackupApp/CheckingDevice_v14.02.2025.py
+pyinstaller --onefile --noconsole --icon=BackupApp/icon.ico --clean --name=Run --distpath . BackupApp/CheckingDevice_v28.02.2025.py
 rmdir -Recurse -Force build
 Remove-Item Run.spec
 
@@ -13,7 +13,7 @@ robocopy . "\\172.17.35.30\it-softwares\TruongNL\Soft\Apps\CheckingDevice" /E
 robocopy . "C:\Soft\Apps\CheckingDevice" /E
 
 git add . 
-git commit -m "TruongNL update 19/02/2025 11:11:44.67" 
+git commit -m "TruongNL update 28/02/2025 11:11:44.67" 
 git push 
 
 start run.exe

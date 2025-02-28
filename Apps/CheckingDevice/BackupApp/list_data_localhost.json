@@ -1,12 +1,15 @@
 [
     {
         "name": "Lê Hoàng Phúc",
+        "email":"phuclh@hunghau.vn",
         "working_location": "Nhân viên - Chuyển đổi số"
     },{
         "name": "Tô Nhật Minh Quang",
+        "email":"quangtnm@hunghau.vn",
         "working_location":"Nhân viên - Chuyển đổi số"
     },{
         "name": "Phạm Thị Cẩm Vân",
+        "email":"vanptc@hunghau.vn",
         "working_location":"Nhân viên - Chuyển đổi số"
     }
 ]

@@ -4,6 +4,7 @@ import sys
 import time
 import json
 import ctypes
+import requests
 import datetime
 import subprocess
 import webbrowser
@@ -13,6 +14,7 @@ from bs4 import BeautifulSoup
 from tkinter import messagebox
 from openpyxl import load_workbook
 
+UPLOAD_URL = "https://chuky.hunghau.org/apis_v1/bienban/upload"
 unikey_path = r"BackupApp\\UniKeyNT.exe"  # Đường dẫn tới UniKey
 cmd_check_health_status_disk = r'.\\CrytalDiskInfo\DiskInfo64.exe /CopyExit'
 json_path_json = r'BackupApp\\list_data_localhost.json'
@@ -26,7 +28,8 @@ web_check_speaker='https://mymictest.com/vi/speaker-test/'
 web_check_keyboard='https://en.key-test.ru/'
 web_check_camera='https://www.onlinemictest.com/webcam-test/'
 web_check_micro='https://www.onlinemictest.com/'
-web_sharepoint = 'https://hunghaugroup.sharepoint.com/:f:/g/HHH.HungHauHoldings/Es1sMfxQCtJMvZjz8MH6trMB9do2xRhMbPQbPJSXy1pjww?e=BReDQB'
+# web_sharepoint = 'https://hunghaugroup.sharepoint.com/:f:/g/HHH.HungHauHoldings/Es1sMfxQCtJMvZjz8MH6trMB9do2xRhMbPQbPJSXy1pjww?e=BReDQB'
+web_sharepoint = 'https://chuky.hunghau.org/bienban'
 write_data_to_excel = 'BackupApp/BanGiao.xlsx'
 
 def run_as_admin():
@@ -48,13 +51,15 @@ def load_support_data():
             data = json.load(file)
             return {
                 "names": [person["name"] for person in data], 
-                "working_locations": [person["working_location"] for person in data] 
+                "working_locations": [person["working_location"] for person in data],
+                "emails": [person["email"] for person in data] 
             }
     except Exception as e:
         print(f"Lỗi khi đọc file JSON: {e}")
-        return {"names": [], "working_locations": []}
+        return {"names": [], "working_locations": [], "emails": []}
 support_data = load_support_data()
 support_names = support_data["names"]
+support_emails = support_data["emails"]
 support_working_locations = support_data["working_locations"]
 
 def check_pin():
@@ -188,7 +193,115 @@ def submit_form():
     workbook.save(filename)
     os.system(f'start "" "{filename}"')
     os.system(f'start "" "{web_sharepoint}"')
-    os.remove(cmd_read_report_pin)
+    # os.remove(cmd_read_report_pin)
+    send_file()
+    
+def fast_send_file():
+    input_user_Support = support_combobox.get()
+    input_user_name = entry_name.get()
+    input_department = entry_department.get()
+    text_note_1 = entry_note1.get()
+    text_note_2 = entry_note2.get()
+    text_note_3 = entry_note3.get()
+    
+    type_bb = type_var.get()
+    selected_support = support_combobox.get()
+    if selected_support in support_names:
+        index = support_names.index(selected_support)
+        working_location = support_working_locations[index]
+    else:
+        working_location = "Không xác định"
+        
+    # Lấy thông tin pin từ entry_pin
+    battery_status = entry_pin.get()
+    
+    # Lấy thông tin hệ thống
+    hostname = entry_hostname.get().strip()
+    system_model = subprocess.run(['wmic', 'csproduct', 'get', 'name'], capture_output=True, text=True).stdout.strip().split('\n')[2]
+    serial = subprocess.run(['wmic', 'bios', 'get', 'serialnumber'], capture_output=True, text=True).stdout.strip().split('\n')[2]
+    CPU_Name = subprocess.run(['wmic', 'cpu', 'get', 'name'], capture_output=True, text=True).stdout.strip().split('\n')[2]
+    
+    #RAM
+    capacities = subprocess.run(['wmic', 'MemoryChip', 'get', 'Capacity'], capture_output=True, text=True).stdout.strip().split('\n')[2:]
+    speeds = subprocess.run(['wmic', 'MemoryChip', 'get', 'speed'], capture_output=True, text=True).stdout.strip().split('\n')[2:]
+    manufacturers = subprocess.run(['wmic', 'MemoryChip', 'get', 'manufacturer'], capture_output=True, text=True).stdout.strip().split('\n')[2:]
+
+    ram_info = [(cap.strip(), speed.strip(), man.strip()) for cap, speed, man in zip(capacities, speeds, manufacturers) if cap]
+    rams = []
+    for i, (capacity, speed, manufacturer) in enumerate(ram_info):
+        Ram_OS = (f"RAM {i + 1}: {capacity:.1}GB {speed} {manufacturer}")
+        rams.append(Ram_OS)
+        print(Ram_OS)
+    Ram_OS = '\n'.join(rams)
+    
+    #Disk
+    cmd = 'Get-PhysicalDisk | Select-Object MediaType, Manufacturer, Model, Size'
+    result = subprocess.run(['powershell', '-Command', cmd], capture_output=True, text=True)
+
+    if result.stderr:
+        print(f"Error: {result.stderr.strip()}")
+    else:
+        output = result.stdout.strip().splitlines()[2:]
+        print('Disk:')
+        disks = []
+        i = 0
+        for line in output:
+            i += 1 
+            parts = line.strip().split()
+            media_type = parts[0]
+            manufacturer = parts[1]
+            model = ' '.join(parts[2:-1])
+            size_bytes = int(parts[-1])
+            size_gb = size_bytes / 2**30
+            Disk = (f"Media {i}: {media_type}, Manufacturer: {manufacturer}, Model: {model}, Size: {size_gb:.2f} GB")
+            disks.append(Disk)
+            print(Disk)
+        Disk = '\n'.join(disks)
+    
+    hard_ware = f"{CPU_Name}\n{Ram_OS}\n{Disk}"
+    # Ghi vào file Excel
+    workbook = load_workbook(write_data_to_excel)
+    sheet = workbook['BienBan']
+    sheet['B10'] = input_user_Support
+    sheet['D10'] = working_location
+    sheet['D12'] = input_department
+    sheet['A10'], sheet['B12'], sheet['D14'] = ('Người giao:' if type_bb == 'Giao' else 'Người nhận:'), input_user_name, hostname
+    sheet['E17'], sheet['B17'], sheet['C17'] = serial, system_model, hard_ware
+    sheet['F17'] = f"Tình trạng thân máy: {text_note_1}\nKết nối khác: {text_note_2}\nTuổi thọ ổ cứng: {text_note_3}\nPin còn lại: {battery_status}"
+
+    # Lưu và mở file
+    if not os.path.exists('Export'):
+        os.makedirs('Export')
+    filename = f'Export/BB-{type_bb}-{input_user_name}-{datetime.date.today().strftime("%d%m%Y")}.xlsx'
+    workbook.save(filename)
+    # os.system(f'start "" "{filename}"')
+    os.system(f'start "" "{web_sharepoint}"')
+    # os.remove(cmd_read_report_pin)
+    send_file()
+
+def send_file():
+    selected_support = support_combobox.get()
+    if selected_support in support_names:
+        index = support_names.index(selected_support)
+        upload_by_email = support_emails[index]
+    else:
+        upload_by_email = selected_support
+
+    filename = f'Export/BB-{type_var.get()}-{entry_name.get()}-{datetime.date.today().strftime("%d%m%Y")}.xlsx'
+    if not os.path.exists(filename):
+        messagebox.showerror("Lỗi", "File không tồn tại.")
+        return
+
+    files = {'file': open(filename, 'rb')}
+    data = {'UploadBy': upload_by_email}
+
+    try:
+        response = requests.post(UPLOAD_URL, files=files, data=data)
+        response.raise_for_status()
+        messagebox.showinfo("Success", "Gửi file thành công!")
+        os.remove(cmd_read_report_pin)
+    except requests.exceptions.RequestException as e:
+        messagebox.showerror("Error", f"Error uploading file: {e}")
 
 def rename_pc():
     new_hostname = entry_hostname.get().strip()
@@ -274,7 +387,8 @@ entry_pin = ttk.Entry(root, style="TEntry")
 entry_pin.grid(row=8, column=1, padx=10, pady=5, sticky="ew", ipadx=100)
 
 # Nút gửi
-ttk.Button(root, text="Tạo", command=submit_form, style="TButton").grid(row=9, column=0, columnspan=3, padx=10, pady=10, sticky="ew")
+ttk.Button(root, text="Gửi dữ liệu", command=fast_send_file, style="TButton").grid(row=9, column=0, padx=10, pady=10, sticky="ew")
+ttk.Button(root, text="Tạo", command=submit_form, style="TButton").grid(row=9, column=1, padx=10, pady=10, sticky="ew")
 
 os.system(cmd_create_report_pin)
 root.after(2000, update_battery_status)
